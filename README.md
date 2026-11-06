@@ -116,8 +116,6 @@ To run the test suite:
 pytest tests -v
 ```
 
-*(Optional: Set your `GEMINI_API_KEY` in `.env` or input it directly in the app sidebar to enable live Gemini generation).*
-
 ---
 
 ## Sample Questions
