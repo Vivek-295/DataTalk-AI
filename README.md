@@ -159,8 +159,8 @@ nl2sql-database-agent/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Vivek-295/nl2sql-database-agent.git
-cd nl2sql-database-agent
+git clone https://github.com/Vivek-295/DataTalk-AI.git
+cd DataTalk-AI
 ```
 
 ### 2. Set Up a Python Virtual Environment
@@ -209,10 +209,10 @@ python -m pytest tests -v
 
 You can host this application online for free for lifetime so interviewers can test it live:
 
-1. Push this repository to your GitHub account (`https://github.com/Vivek-295/nl2sql-database-agent`).
+1. Push this repository to your GitHub account (`https://github.com/Vivek-295/DataTalk-AI`).
 2. Visit [share.streamlit.io](https://share.streamlit.io/) and log in with your GitHub account.
 3. Click **"New App"**.
-4. Select your repository: `Vivek-295/nl2sql-database-agent`.
+4. Select your repository: `Vivek-295/DataTalk-AI`.
 5. Set Branch: `main` (or `master`) and Main file path: `app.py`.
 6. Click **"Advanced settings..."** and paste your `GEMINI_API_KEY` into the **Secrets** section:
    ```toml
