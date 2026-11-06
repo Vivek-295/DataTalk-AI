@@ -157,20 +157,6 @@ pytest tests -v
 
 ---
 
-## Deployment
-
-This application can be deployed directly to [Streamlit Community Cloud](https://share.streamlit.io):
-
-1. Fork or push this repository to your GitHub account.
-2. In Streamlit Cloud, create a **New App** and select this repository, branch `main`, and main file `app.py`.
-3. In **Advanced Settings > Secrets**, optionally add your API key:
-   ```toml
-   GEMINI_API_KEY = "your_key_here"
-   ```
-4. Click **Deploy**.
-
----
-
 ## Example Queries
 
 | Category | Sample Question |
