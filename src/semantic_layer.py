@@ -1,7 +1,5 @@
 """
-Semantic Layer Parser & Context Manager for NL2SQL Agent.
-Loads enterprise semantic definitions (business metrics, entity synonyms, and join rules)
-and injects domain knowledge into the prompt context to eliminate semantic failures.
+Loads and parses semantic layer definitions for prompt context.
 """
 
 import os

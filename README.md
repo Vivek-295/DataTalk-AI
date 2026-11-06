@@ -12,30 +12,30 @@
 
 ## Overview
 
-**DataTalk** is a conversational database assistant that translates plain English questions into verified SQL queries, executes them against a relational database, and presents the results alongside interactive visualizations.
+DataTalk is a web-based natural language interface for relational databases. It translates plain English questions into verified SQL queries, executes them against an SQLite database, and returns the data alongside an interactive chart and summary.
 
-It addresses the common reporting bottleneck where non-technical teams (product, marketing, operations) need ad-hoc data insights but depend on data analysts or engineering teams to write queries.
+The goal is to let non-technical team members (marketing, sales, operations) explore company data directly without waiting on data analysts to write custom SQL for every ad-hoc question.
 
 ```mermaid
 flowchart TD
-    A["User Question\n(Plain English)"] --> B["Streamlit UI"]
+    A["User Question"] --> B["Streamlit UI"]
     
-    subgraph Pipeline ["Query Processing Pipeline"]
-        C["Schema Introspector\n(Tables, columns, types)"]
-        D["Semantic Layer\n(Metrics, joins, synonyms)"]
-        E["Few-Shot Manager\n(Gold SQL patterns)"]
+    subgraph Engine ["Query Pipeline"]
+        C["Schema Introspector"]
+        D["Semantic Layer (YAML)"]
+        E["Few-Shot Examples"]
         
-        C & D & E --> F["LLM Generation\n(Gemini / LangChain)"]
-        F --> G["Security Guardrails\n(Read-only, injection check)"]
+        C & D & E --> F["LLM Generation (Gemini)"]
+        F --> G["Security Guardrails"]
     end
     
-    B --> Pipeline
+    B --> Engine
     G --> H["SQLite Database"]
-    H --> I["Result DataFrame"]
+    H --> I["Result Set"]
     
-    subgraph Presentation ["Presentation Layer"]
-        I --> J["Natural Language Summary"]
-        I --> K["Plotly Auto-Charts"]
+    subgraph UI ["Response View"]
+        I --> J["Summary"]
+        I --> K["Plotly Chart"]
     end
     
     J & K --> B
@@ -43,34 +43,31 @@ flowchart TD
 
 ---
 
-## Features
+## Key Features
 
-- **Natural Language Querying:** Ask questions in plain English (e.g., *"What were our top 5 products by revenue?"*).
-- **Semantic Model Layer (`config/semantic_layer.yaml`):** Standardizes business metrics (Gross Revenue, AOV, Churn) and entity synonyms in a structured YAML configuration, preventing incorrect table joins or metric calculations.
-- **Few-Shot Query Grounding (`config/few_shot_examples.yaml`):** Injects verified SQLite queries into the context to improve accuracy and ensure proper date formatting (`strftime`) and aggregations.
-- **Read-Only Security Guardrails (`src/security.py`):** Restricts execution strictly to `SELECT` and `WITH` statements, blocking mutating keywords (`DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, etc.) and enforcing automatic row limits.
-- **Automated Visualizations (`src/visualizer.py`):** Automatically selects and renders the appropriate Plotly chart (line charts for time series, donut charts for distributions, bar charts for comparisons).
-- **Interactive UI (`app.py`):** Built with Streamlit, featuring query execution telemetry, CSV download, collapsible SQL views, and a database schema explorer.
-- **Offline Demo Mode:** Includes a deterministic fallback engine so the application remains fully functional and testable even without an active API key.
+- **Natural Language to SQL:** Ask questions in plain English and receive executable SQLite queries.
+- **Semantic Model Layer (`config/semantic_layer.yaml`):** Maps business terminology and definitions (such as net revenue, churn criteria, and average order value) so the model uses the right calculations and table joins.
+- **Few-Shot Examples (`config/few_shot_examples.yaml`):** Injects verified reference queries into the prompt to ensure correct SQLite date handling and aggregations.
+- **Read-Only Security Guardrails (`src/security.py`):** Restricts queries strictly to `SELECT` and `WITH` statements, blocks mutating keywords (`DROP`, `DELETE`, `UPDATE`, `ALTER`), and caps row limits to prevent memory exhaustion.
+- **Automatic Visualizations (`src/visualizer.py`):** Automatically selects and renders the appropriate Plotly chart (line charts for trends, donut charts for distributions, bar charts for comparisons).
+- **Built-in Demo Mode:** Includes an offline fallback with sample questions so the application works out of the box even without an API key.
 
 ---
 
-## Architecture & Engineering Decisions
+## Technical Highlights
 
-### Addressing "Semantic Failures"
-When building natural language interfaces for databases, the primary challenge is rarely syntax—it is **semantic accuracy**. A query may be syntactically valid yet return incorrect business figures (such as counting cancelled orders as revenue, or joining tables incorrectly).
+### Semantic Accuracy over Syntax
+In database agents, the main difficulty is not generating valid SQL syntax, but generating the **correct business logic**. For instance:
+- Filtering revenue by `status IN ('Completed', 'Shipped')` so cancelled or refunded orders are not counted as revenue.
+- Choosing the right foreign key join paths when multiple relationships exist between tables.
 
-DataTalk addresses this by decoupling the data context into three layers:
-1. **Schema Introspection:** Automatically inspects tables, column types, foreign keys, and sample records without exposing raw private rows.
-2. **Semantic Rules:** Defines business logic (e.g., filtering revenue queries by `status IN ('Completed', 'Shipped')`).
-3. **Few-Shot Examples:** Provides verified reference patterns for SQLite dialect handling.
+DataTalk addresses this by combining automated schema introspection with a lightweight semantic YAML configuration that defines core business metrics and table relationships before prompting the model.
 
 ### Query Sandboxing
-To protect against destructive queries and SQL injection:
-- Queries must begin with `SELECT` or `WITH`.
-- Multiple statements chained via semicolons are blocked.
-- Potentially destructive commands are rejected via regex validation.
-- Unbounded queries are capped to a maximum of 200 rows to prevent high memory usage.
+To ensure safety:
+- Only read-only statements (`SELECT` / `WITH`) are permitted.
+- Multi-statement execution via semicolons is blocked to prevent SQL injection.
+- Unbounded queries are automatically capped with a `LIMIT 200` clause.
 
 ---
 
@@ -79,92 +76,58 @@ To protect against destructive queries and SQL injection:
 ```
 DataTalk-AI/
 ├── .streamlit/
-│   └── config.toml           # Streamlit theme and server configuration
+│   └── config.toml           # Streamlit theme configuration
 ├── config/
-│   ├── semantic_layer.yaml   # Business metric formulas, synonyms, and join paths
-│   └── few_shot_examples.yaml# Verified SQL reference queries
+│   ├── semantic_layer.yaml   # Metric definitions, entity synonyms, and join hints
+│   └── few_shot_examples.yaml# Verified reference SQL queries
 ├── data/
-│   ├── seed_database.py      # Seed script for generating realistic test data
+│   ├── seed_database.py      # Database generator with sample data
 │   └── enterprise_data.db    # Seeded SQLite database (7 tables, 1,800+ records)
 ├── src/
 │   ├── __init__.py
-│   ├── agent.py              # Query orchestration, LLM calling, and response synthesis
+│   ├── agent.py              # LLM query orchestration and synthesis
 │   ├── db_engine.py          # SQLite connection and schema introspection
-│   ├── few_shot.py           # Few-shot example loader
+│   ├── few_shot.py           # Few-shot example manager
 │   ├── security.py           # SQL validator and query sanitizer
-│   ├── semantic_layer.py     # Semantic configuration parser
-│   └── visualizer.py         # Plotly visualization generator
+│   ├── semantic_layer.py     # Semantic configuration loader
+│   └── visualizer.py         # Plotly chart generator
 ├── tests/
-│   └── test_agent.py         # Unit and integration test suite
-├── app.py                    # Streamlit web application
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment variables template
-├── .gitignore
-├── LICENSE                   # MIT License
+│   └── test_agent.py         # Test suite
+├── app.py                    # Streamlit web interface
+├── requirements.txt
+├── .env.example
+├── LICENSE
 └── README.md
 ```
 
 ---
 
-## Installation & Setup
+## Running Locally
 
-### 1. Clone the Repository
 ```bash
 git clone https://github.com/Vivek-295/DataTalk-AI.git
 cd DataTalk-AI
-```
-
-### 2. Create a Virtual Environment
-```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
 pip install -r requirements.txt
-```
-
-### 4. Configure API Key (Optional)
-The app includes an offline demo mode that works without an API key. To enable live generation with Google Gemini:
-
-1. Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Create a `.env` file from the example:
-   ```bash
-   cp .env.example .env
-   ```
-3. Set your key:
-   ```env
-   GEMINI_API_KEY=your_api_key_here
-   ```
-*(You can also input your key directly into the sidebar in the web interface).*
-
-### 5. Run the Application
-```bash
 streamlit run app.py
 ```
-Open `http://localhost:8501` in your browser.
 
-### 6. Run Tests
+To run the test suite:
 ```bash
 pytest tests -v
 ```
 
+*(Optional: Set your `GEMINI_API_KEY` in `.env` or input it directly in the app sidebar to enable live Gemini generation).*
+
 ---
 
-## Example Queries
+## Sample Questions
 
-| Category | Sample Question |
+| Area | Sample Question |
 | :--- | :--- |
 | **Sales** | "What were our top 5 best-selling products by total revenue?" |
 | **Trends** | "Show the monthly revenue trend for the year 2024." |
-| **Customer Segments** | "Which customer segments generate the highest average order value?" |
-| **Customer Retention** | "Identify the top 5 customers with the highest lifetime spend." |
+| **Segments** | "Which customer segments generate the highest average order value?" |
+| **Customers** | "Identify top 5 customers with the highest lifetime spend." |
 | **Marketing** | "Compare marketing campaign budget versus actual conversions by channel." |
 | **Inventory** | "Which products have the lowest stock quantity and what is their current status?" |
 

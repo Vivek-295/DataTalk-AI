@@ -1,7 +1,5 @@
 """
-Data Visualization Engine for NL2SQL Agent.
-Intelligently inspects query result sets and automatically generates interactive Plotly figures
-(Bar, Line, Donut, Area, Scatter, and KPI metric cards).
+Generates Plotly charts based on DataFrame column types and query structure.
 """
 
 import re

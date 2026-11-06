@@ -1,7 +1,4 @@
-# ==============================================================================
-# Gold Standard Few-Shot Examples for Enterprise NL2SQL
-# Hand-verified SQL queries adhering to SQLite dialect and the Semantic Layer.
-# ==============================================================================
+# Reference SQL examples for few-shot prompt context
 
 examples:
   - question: "What were our top 5 best-selling products by total revenue?"

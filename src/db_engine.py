@@ -1,7 +1,5 @@
 """
-Database Engine Module for NL2SQL Agent.
-Handles SQLite connection, automated schema introspection, safe query execution,
-and schema context generation for LLM prompting.
+Database engine module for SQLite connection and schema introspection.
 """
 
 import os

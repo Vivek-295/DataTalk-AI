@@ -1,7 +1,5 @@
 """
-Few-Shot Example Manager for NL2SQL Agent.
-Loads validated SQL gold examples and injects them into the prompt to dramatically
-improve exact-match SQL accuracy and domain alignment.
+Loads reference few-shot query examples for prompt assembly.
 """
 
 import os

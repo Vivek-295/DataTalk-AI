@@ -1,7 +1,5 @@
 """
-Security & Guardrails Module for NL2SQL Database Agent.
-Enforces read-only database operations, prevents SQL injection, blocks destructive DDL/DML,
-and ensures safe result-set limits for enterprise query execution.
+Security guardrails to enforce read-only queries and prevent SQL injection.
 """
 
 import re

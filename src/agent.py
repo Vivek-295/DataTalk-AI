@@ -1,8 +1,6 @@
 """
-NL2SQL Database Agent Module.
-Orchestrates schema introspection, semantic layer injection, few-shot prompting,
-secure SQL generation via Gemini / LangChain, database execution, and executive answer synthesis.
-Includes an intelligent offline demo mode for instant evaluation without an API key.
+NL2SQL Agent module.
+Coordinates prompt assembly, model calling, database execution, and result summarization.
 """
 
 import os

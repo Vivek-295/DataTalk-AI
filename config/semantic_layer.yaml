@@ -1,10 +1,7 @@
-# ==============================================================================
-# Enterprise Semantic Model Layer (YAML)
-# Defines business metrics, entities, synonyms, join paths, and calculation rules
-# to eliminate semantic failures and hallucinated table joins.
-# ==============================================================================
+# Semantic Layer Configuration
+# Defines metric formulas, table synonyms, and join relationships.
 
-database_name: "Enterprise Commerce & Analytics Engine"
+database_name: "CommerceDatabase"
 dialect: "sqlite"
 
 entities:
