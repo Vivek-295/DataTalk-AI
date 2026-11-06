@@ -1,7 +1,7 @@
 # ⚡ DataTalk AI: Enterprise Natural Language to SQL (NL2SQL) Database Agent
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io/)
+[![Deploy on Streamlit Community Cloud](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=Vivek-295/DataTalk-AI&branch=main&mainModule=app.py)
 [![Google Gemini API](https://img.shields.io/badge/LLM-Google%20Gemini%202.0%20Flash-4285F4.svg)](https://ai.google.dev/)
 [![Database](https://img.shields.io/badge/Database-SQLite%203-003B57.svg)](https://www.sqlite.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
