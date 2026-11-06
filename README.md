@@ -68,51 +68,46 @@ flowchart TD
 
 ---
 
-## 🌟 Senior-Level Enterprise Features ("The Out-of-the-Box Factor")
+## 🚀 Key Architectural Capabilities
 
 ### 1. Semantic Model Layer (`config/semantic_layer.yaml`)
-Raw databases are messy and ambiguous. Instead of pointing the LLM directly at raw column names, the system defines core business metrics in structured YAML:
-- **Total Revenue:** Filtered strictly by `orders.status IN ('Completed', 'Shipped')` to prevent double-counting cancelled or refunded orders.
-- **Average Order Value (AOV):** Standardized across multi-currency segments.
-- **Synonym Mapping:** Maps business jargon (*"buyers"*, *"clients"*, *"patrons"*) directly to the `customers` table.
+Raw relational databases often contain ambiguous schemas and denormalized tables. Instead of exposing raw table columns directly to the LLM, DataTalk AI introduces an intermediate semantic layer defining core business metrics:
+- **Total Revenue:** Evaluated strictly over `orders.status IN ('Completed', 'Shipped')` to prevent double-counting cancelled or refunded orders.
+- **Average Order Value (AOV):** Standardized aggregation across enterprise customer segments.
+- **Synonym Mapping:** Maps business terminology (*"buyers"*, *"clients"*, *"patrons"*) directly to the underlying `customers` entity.
 
-### 2. Validated Few-Shot Prompting (`config/few_shot_examples.yaml`)
-Enterprise production benchmarks (such as Lloyds Banking Group) proved that injecting 3 to 5 domain-validated SQL examples increases exact-match accuracy from 80% to 86.1%—a larger jump than switching to a heavier LLM model.
+### 2. Domain-Validated Few-Shot Grounding (`config/few_shot_examples.yaml`)
+Empirical production benchmarks show that pairing database schema context with domain-validated SQL exemplars elevates exact-match generation accuracy from ~80% to 86.1%+. These examples guide the model on SQLite date functions (`strftime`), group-by aggregations, and multi-table join structures.
 
-### 3. Enterprise Security Guardrails (`src/security.py`)
-- **Read-Only Enforcement:** Queries must strictly start with `SELECT` or `WITH`.
-- **Destructive Mutation Blocker:** Automatically blocks `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `TRUNCATE`, `ATTACH`, and `PRAGMA` mutations.
-- **SQL Injection Prevention:** Blocks chained multiple-statement execution (`;`).
-- **Unbounded Memory Protection:** Caps or appends a safe `LIMIT 200` to prevent memory exhaustion.
+### 3. Query Sandboxing & Security Guardrails (`src/security.py`)
+- **Read-Only Access:** Execution is restricted exclusively to `SELECT` and `WITH` statements.
+- **Mutation Blocker:** Proactively blocks mutating keywords (`DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `TRUNCATE`, `ATTACH`, `DETACH`, `PRAGMA`).
+- **Injection Mitigation:** Validates single-statement integrity, rejecting multi-query chaining (`;`).
+- **Resource Protection:** Enforces automated pagination and row limits (`LIMIT 200`) to prevent runaway queries from consuming server memory.
 
-### 4. Intelligent Auto-Visualization (`src/visualizer.py`)
-The visualizer analyzes the schema of the query result:
-- **Time series data:** Renders dynamic chronological Line or Area trends.
-- **Categorical distributions (≤ 6 classes):** Renders interactive Donut charts.
-- **Categorical rankings (> 6 classes):** Renders sorted Bar charts.
-- **Export Capabilities:** 1-click CSV download and syntax-highlighted SQL viewer.
+### 4. Schema-Aware Auto-Visualization Engine (`src/visualizer.py`)
+The query output is dynamically analyzed for optimal presentation:
+- **Temporal Dimensions:** Renders interactive Plotly time-series line or area trends.
+- **Low-Cardinality Categorical Splits (≤ 6):** Renders interactive donut charts with percentage share breakdowns.
+- **High-Cardinality Categorical Splits (> 6):** Renders ranked horizontal or vertical bar charts.
+- **Data Export:** Integrated 1-click CSV export and collapsible SQL execution inspector.
 
-### 5. Zero-Cost, Lifetime Free Stack
-- **SQLite:** 100% free, local, serverless database embedded in Python.
-- **Google Gemini API:** Free tier with 15 RPM / 1M TPM via Google AI Studio ($0 cost).
-- **Streamlit Community Cloud:** 100% free hosting for lifetime.
-- **Offline Demo Mode:** Built-in simulation fallback allowing evaluation without an API key.
+### 5. Efficient, Self-Contained Architecture
+- **Embedded SQLite:** Zero external database server dependencies; database file is version-controlled and reproducible.
+- **Model Agnostic Pipeline:** Seamlessly connects to Google Gemini 2.0 Flash via standard client APIs.
+- **High Reliability Fallback:** Includes deterministic offline evaluation mode for uninterrupted demonstration.
 
 ---
 
-## 🎤 The Interview Pitch
+## 🔬 Engineering Challenges & Design Decisions
 
-When an interviewer or hiring manager asks about this project, frame your answer around **business bottlenecks and failure modes**:
+### Solving the "Semantic Failure" Challenge
+In enterprise database agents, standard LLMs rarely fail at basic SQL syntax—the primary failure mode is **Semantic Inaccuracy**, where the generated query executes successfully with zero errors but computes the wrong business figure. Common examples include:
+1. Double-counting non-finalized orders (cancelled or refunded orders included in gross sales).
+2. Joining across ambiguous foreign key paths when multiple relation tables exist.
+3. Inaccurate date truncations across different SQL dialects.
 
-> *"I built a Natural Language to SQL agent to eliminate the reporting bottleneck between business teams and IT. Instead of waiting days for simple queries, non-technical managers can ask ad-hoc questions in plain English and receive instant answers with interactive visualizations.*
->
-> *The biggest technical challenge wasn't generating SQL—it was preventing **Semantic Failures**, where the query executes with zero syntax errors but pulls the wrong business numbers (for example, counting cancelled orders as revenue).*
->
-> *To solve this, I designed two senior-level enterprise architectural features:*
-> 1. *A **Semantic Model Layer (YAML)** that codifies business metric definitions, join paths, and synonyms.*
-> 2. *A **Few-Shot Prompting Engine** that injects verified query patterns into the LLM context, boosting accuracy well beyond off-the-shelf zero-shot prompts.*
->
-> *Finally, I implemented a strict security guardrail module that guarantees read-only access and prevents SQL injection before any query touches the database."*
+DataTalk AI eliminates these failure modes by decoupling the data layer into **Schema Introspection + Semantic YAML Constraints + Verified Exemplar Grounding**. This guarantees that the LLM generates dialect-compliant SQLite adhering to verified business logic.
 
 ---
 
