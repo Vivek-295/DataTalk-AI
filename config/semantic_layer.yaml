@@ -1,0 +1,153 @@
+# ==============================================================================
+# Enterprise Semantic Model Layer (YAML)
+# Defines business metrics, entities, synonyms, join paths, and calculation rules
+# to eliminate semantic failures and hallucinated table joins.
+# ==============================================================================
+
+database_name: "Enterprise Commerce & Analytics Engine"
+dialect: "sqlite"
+
+entities:
+  customers:
+    table: "customers"
+    primary_key: "customer_id"
+    description: "Registered corporate clients and individual buyers."
+    synonyms: ["clients", "buyers", "accounts", "users", "leads", "patrons"]
+    dimensions:
+      - name: "segment"
+        description: "Customer business size: 'Enterprise', 'Mid-Market', 'SMB', 'Consumer'"
+      - name: "loyalty_tier"
+        description: "Customer tier: 'Bronze', 'Silver', 'Gold', 'Platinum'"
+      - name: "city"
+        description: "Customer headquarter/billing city"
+      - name: "country"
+        description: "Customer country"
+
+  products:
+    table: "products"
+    primary_key: "product_id"
+    description: "Catalog of software licenses, cloud infra subscriptions, and workplace hardware."
+    synonyms: ["items", "skus", "merchandise", "goods", "catalog", "offerings"]
+    dimensions:
+      - name: "product_name"
+        description: "Name of the product or service"
+      - name: "unit_price"
+        description: "Standard retail price per unit"
+      - name: "cost_price"
+        description: "Internal cost/procurement cost per unit"
+      - name: "status"
+        description: "Inventory status: 'In Stock', 'Low Stock', 'Discontinued'"
+
+  categories:
+    table: "categories"
+    primary_key: "category_id"
+    description: "Product classification departments and categories."
+    synonyms: ["departments", "classes", "product lines", "verticals"]
+
+  orders:
+    table: "orders"
+    primary_key: "order_id"
+    description: "Header level order transactions."
+    synonyms: ["sales", "transactions", "purchases", "deals", "bookings"]
+    dimensions:
+      - name: "status"
+        description: "Order status: 'Completed', 'Shipped', 'Processing', 'Cancelled', 'Refunded'"
+      - name: "payment_method"
+        description: "'Credit Card', 'Wire Transfer', 'PayPal', 'UPI'"
+      - name: "order_date"
+        description: "Transaction placement date (YYYY-MM-DD)"
+
+  order_items:
+    table: "order_items"
+    primary_key: "order_item_id"
+    description: "Line-item level details of products purchased in each order."
+    synonyms: ["line items", "cart items", "order details"]
+
+  product_reviews:
+    table: "product_reviews"
+    primary_key: "review_id"
+    description: "User customer ratings and reviews."
+    synonyms: ["feedback", "ratings", "scores", "satisfaction", "reviews"]
+
+  marketing_campaigns:
+    table: "marketing_campaigns"
+    primary_key: "campaign_id"
+    description: "Digital advertising campaigns and lead generation performance."
+    synonyms: ["ads", "campaigns", "promotions", "ad spend"]
+
+relationships:
+  - from: "orders.customer_id"
+    to: "customers.customer_id"
+    type: "many_to_one"
+    join_hint: "JOIN customers c ON o.customer_id = c.customer_id"
+  - from: "order_items.order_id"
+    to: "orders.order_id"
+    type: "many_to_one"
+    join_hint: "JOIN orders o ON oi.order_id = o.order_id"
+  - from: "order_items.product_id"
+    to: "products.product_id"
+    type: "many_to_one"
+    join_hint: "JOIN products p ON oi.product_id = p.product_id"
+  - from: "products.category_id"
+    to: "categories.category_id"
+    type: "many_to_one"
+    join_hint: "JOIN categories cat ON p.category_id = cat.category_id"
+  - from: "product_reviews.product_id"
+    to: "products.product_id"
+    type: "many_to_one"
+    join_hint: "JOIN products p ON pr.product_id = p.product_id"
+  - from: "product_reviews.customer_id"
+    to: "customers.customer_id"
+    type: "many_to_one"
+    join_hint: "JOIN customers c ON pr.customer_id = c.customer_id"
+
+metrics:
+  total_revenue:
+    label: "Total Gross Revenue"
+    description: "Sum of actual billed amounts for successful orders (Completed or Shipped)."
+    formula: "ROUND(SUM(o.total_amount), 2)"
+    sql_snippet: "SUM(CASE WHEN o.status IN ('Completed', 'Shipped') THEN o.total_amount ELSE 0 END)"
+    business_rule: "Only include orders where status IN ('Completed', 'Shipped'). Exclude 'Cancelled' and 'Refunded'."
+
+  line_item_net_revenue:
+    label: "Item Net Revenue"
+    description: "Calculated item-level revenue taking quantity, unit_price, and discounts into account."
+    formula: "ROUND(SUM(oi.quantity * oi.unit_price * (1.0 - (oi.discount_percent / 100.0))), 2)"
+    business_rule: "Join order_items with orders; filter orders.status IN ('Completed', 'Shipped')."
+
+  profit_margin:
+    label: "Gross Profit"
+    description: "Net revenue minus cost of goods sold (COGS)."
+    formula: "ROUND(SUM((oi.unit_price * (1.0 - oi.discount_percent / 100.0) - p.cost_price) * oi.quantity), 2)"
+
+  average_order_value:
+    label: "Average Order Value (AOV)"
+    description: "Total gross revenue divided by number of completed/shipped orders."
+    formula: "ROUND(AVG(o.total_amount), 2)"
+    business_rule: "WHERE o.status IN ('Completed', 'Shipped')"
+
+  active_customers:
+    label: "Active Customers"
+    description: "Unique customers who have placed at least one completed or shipped order."
+    formula: "COUNT(DISTINCT o.customer_id)"
+    business_rule: "WHERE o.status IN ('Completed', 'Shipped')"
+
+  churned_customers:
+    label: "Churned / At-Risk Customers"
+    description: "Customers whose latest order was placed more than 90 days ago, or who haven't placed an order."
+    formula: "Customers where MAX(order_date) < DATE('now', '-90 days') OR order_date IS NULL"
+
+  customer_lifetime_value:
+    label: "Customer Lifetime Value (CLV)"
+    description: "Total revenue generated by a single customer across all completed/shipped orders."
+    formula: "SUM(o.total_amount) GROUP BY o.customer_id"
+
+  cancellation_rate:
+    label: "Order Cancellation Rate"
+    description: "Percentage of total orders that ended in 'Cancelled' or 'Refunded'."
+    formula: "ROUND(100.0 * SUM(CASE WHEN o.status IN ('Cancelled', 'Refunded') THEN 1 ELSE 0 END) / COUNT(*), 2)"
+
+  marketing_roi:
+    label: "Marketing Return on Investment"
+    description: "Conversions or revenue generated per dollar spent on a campaign."
+    formula: "ROUND(SUM(conversions) * 1.0 / NULLIF(SUM(spent), 0), 4)"

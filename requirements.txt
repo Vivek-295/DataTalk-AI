@@ -1,0 +1,19 @@
+# Core Application Framework
+streamlit>=1.35.0
+pandas>=2.0.0
+plotly>=5.18.0
+pyyaml>=6.0
+
+# Database Engine
+SQLAlchemy>=2.0.0
+
+# LLM & AI Agents
+google-genai>=1.0.0
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
+langchain-google-genai>=1.0.0
+
+# Utilities & Configuration
+python-dotenv>=1.0.0
+pytest>=8.0.0
