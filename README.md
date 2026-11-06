@@ -6,7 +6,7 @@
 [![Database](https://img.shields.io/badge/Database-SQLite%203-003B57.svg)](https://www.sqlite.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Live Demo:** [Deploy Free on Streamlit Community Cloud](https://streamlit.io/cloud)  
+> **Live Demo:** [https://vivek-295-datatalk-ai-app-mgzpon.streamlit.app](https://vivek-295-datatalk-ai-app-mgzpon.streamlit.app)  
 > **Author:** Vivek Yadav ([GitHub: @Vivek-295](https://github.com/Vivek-295))
 
 ---
