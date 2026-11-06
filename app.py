@@ -26,16 +26,15 @@ from data.seed_database import init_db, DB_PATH
 # Page Configuration & Global Theme
 # ==============================================================================
 st.set_page_config(
-    page_title="DataTalk AI | Enterprise NL2SQL Database Agent",
-    page_icon="⚡",
+    page_title="DataTalk - Natural Language to SQL",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Enterprise CSS
+# Custom Styling
 st.markdown("""
 <style>
-    /* Metric Card Styling */
     .metric-card {
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -56,12 +55,10 @@ st.markdown("""
         font-weight: 700;
         margin-top: 4px;
     }
-    /* Prompt Chip Buttons */
     .stButton > button {
         border-radius: 8px;
         transition: all 0.2s ease-in-out;
     }
-    /* SQL Code Block */
     .sql-meta-badge {
         display: inline-block;
         background-color: #059669;
@@ -93,11 +90,8 @@ if "messages" not in st.session_state:
         {
             "role": "assistant",
             "natural_answer": (
-                "👋 **Welcome to DataTalk AI!** I am your Enterprise NL2SQL Database Agent.\n\n"
-                "I translate your business questions into verified, read-only SQL queries, "
-                "execute them against our enterprise data warehouse, and generate executive summaries "
-                "with interactive charts in real time.\n\n"
-                "Try asking a question in plain English or click one of the suggested prompts below!"
+                "**Welcome to DataTalk!** Ask any question about your data in plain English, and I will generate the SQL query, execute it against the database, and display the results with interactive charts.\n\n"
+                "Try typing a question below or click one of the suggested queries above."
             ),
             "generated_sql": None,
             "executed_sql": None,
@@ -114,11 +108,11 @@ if "pending_prompt" not in st.session_state:
 
 
 # ==============================================================================
-# Sidebar: Engine Configuration & Knowledge Explorer
+# Sidebar: Settings & Database Explorer
 # ==============================================================================
 with st.sidebar:
-    st.markdown("### ⚡ DataTalk Engine")
-    st.caption("AI-Powered Business Intelligence & Natural Language Querying")
+    st.markdown("### Settings")
+    st.caption("Model & API configuration")
 
     # API Configuration
     env_key = os.getenv("GEMINI_API_KEY", "")
@@ -129,10 +123,10 @@ with st.sidebar:
         except Exception:
             pass
     api_key_input = st.text_input(
-        "Google Gemini API Key",
+        "Gemini API Key",
         value=env_key,
         type="password",
-        help="Free lifetime API Key from Google AI Studio. Leave empty to use intelligent Offline Demo Mode."
+        help="Google AI Studio API key. Leave blank to run in offline demo mode."
     )
 
     col_model, col_status = st.columns([2, 1])
@@ -140,34 +134,32 @@ with st.sidebar:
         selected_model = st.selectbox(
             "Model",
             ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
-            index=0,
-            help="gemini-2.0-flash is ultra-fast and free."
+            index=0
         )
     with col_status:
         if api_key_input:
-            st.markdown("<br><span style='color:#10B981; font-weight:600;'>🟢 Live LLM</span>", unsafe_allow_html=True)
+            st.markdown("<br><span style='color:#10B981; font-weight:600;'>🟢 Active</span>", unsafe_allow_html=True)
         else:
             st.markdown("<br><span style='color:#F59E0B; font-weight:600;'>🟡 Demo Mode</span>", unsafe_allow_html=True)
 
     if not api_key_input:
-        st.info("💡 **Free Lifetime Setup:** [Get a 100% Free Gemini API Key](https://aistudio.google.com/app/apikey) (No credit card needed).")
+        st.caption("Don't have an API key? [Get one from Google AI Studio](https://aistudio.google.com/app/apikey)")
 
     st.divider()
 
-    # Database Architecture & Tables
-    st.markdown("### 🗄️ Database Architecture")
+    # Database Info
+    st.markdown("### Database Info")
     if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
         init_db(DB_PATH)
     db_engine = DatabaseEngine(DB_PATH)
     schema_info = db_engine.get_schema_info()
 
-    # Summary metrics in sidebar
     total_tables = len(schema_info)
     total_records = sum(details["row_count"] for details in schema_info.values())
-    st.markdown(f"**Dialect:** SQLite (Read-Only Guardrailed)")
-    st.markdown(f"**Scope:** {total_tables} Tables | {total_records:,} Total Records")
+    st.markdown(f"**Dialect:** SQLite")
+    st.markdown(f"**Tables:** {total_tables} | **Records:** {total_records:,}")
 
-    with st.expander("🔍 Explore Tables & Schema", expanded=False):
+    with st.expander("Explore Tables & Schema", expanded=False):
         for table, details in schema_info.items():
             st.markdown(f"**Table `{table}`** ({details['row_count']} rows)")
             col_list = [f"`{c['name']}` ({c['type']})" for c in details["columns"][:6]]
@@ -177,59 +169,53 @@ with st.sidebar:
                     st.caption(f"↳ FK: `{fk['from_col']}` → `{fk['to_table']}.{fk['to_col']}`")
             st.divider()
 
-    # Semantic Layer Inspector
-    with st.expander("📐 Semantic Model Layer (YAML)", expanded=False):
+    with st.expander("Semantic Layer Metrics", expanded=False):
         sem_layer = SemanticLayer()
-        st.markdown("**Defined Business Metrics:**")
+        st.markdown("**Configured Metrics:**")
         for key, m in sem_layer.metrics.items():
             st.markdown(f"- **{m.get('label', key)}**: `{m.get('formula', '')}`")
             if m.get("business_rule"):
                 st.caption(f"Rule: {m.get('business_rule')}")
 
-    # Few-Shot Examples Inspector
-    with st.expander("🎯 Validated Few-Shot Prompts", expanded=False):
+    with st.expander("Few-Shot Example Queries", expanded=False):
         few_shot = FewShotManager()
-        st.caption(f"{len(few_shot.examples)} validated gold SQL queries loaded for high precision.")
+        st.caption(f"{len(few_shot.examples)} validated reference queries loaded.")
         for idx, ex in enumerate(few_shot.examples[:3], 1):
             st.markdown(f"**{idx}. {ex['question']}**")
             st.code(ex["sql"].strip(), language="sql")
 
-    # Database Tools
     st.divider()
-    if st.button("🔄 Reset / Re-seed Database"):
-        with st.spinner("Re-seeding database with fresh records..."):
+    if st.button("Reset Database"):
+        with st.spinner("Re-seeding database..."):
             init_db(DB_PATH)
-            st.success("Database re-seeded successfully!")
+            st.success("Database re-seeded successfully.")
             time.sleep(1)
             st.rerun()
 
 
 # ==============================================================================
-# Header & Executive Summary
+# Header
 # ==============================================================================
-st.markdown("## ⚡ DataTalk AI: Natural Language to SQL Agent")
-st.markdown(
-    "Eliminate reporting bottlenecks. Ask any analytical question in plain English and receive "
-    "instant, verified SQL execution, executive insights, and interactive visualizations."
-)
+st.markdown("## DataTalk: Natural Language to SQL")
+st.markdown("Ask analytical questions in plain English to query the database and generate visualizations.")
 
-# Suggested Query Chips
-st.markdown("##### 💡 Suggested Questions (Click to Test):")
+# Suggested Queries
+st.markdown("##### Suggested Queries:")
 chip_cols = st.columns(3)
 
 prompt_options = [
-    ("🏆 Top Products", "What were our top 5 best-selling products by total revenue?"),
-    ("📈 Monthly Trend", "Show the monthly revenue trend for the year 2024."),
-    ("👥 Customer AOV", "Which customer segments generate the highest average order value?"),
-    ("💎 Top Spenders", "Identify top 5 customers with the highest lifetime spend."),
-    ("🎯 Marketing ROI", "Compare marketing campaign budget versus actual conversions by channel."),
-    ("📦 Inventory Risks", "Which products have the lowest stock quantity and what is their current status?")
+    ("Top Products", "What were our top 5 best-selling products by total revenue?"),
+    ("Monthly Sales Trend", "Show the monthly revenue trend for the year 2024."),
+    ("Customer Segments & AOV", "Which customer segments generate the highest average order value?"),
+    ("Top Customers by Spend", "Identify top 5 customers with the highest lifetime spend."),
+    ("Marketing ROI", "Compare marketing campaign budget versus actual conversions by channel."),
+    ("Low Stock Inventory", "Which products have the lowest stock quantity and what is their current status?")
 ]
 
 for idx, (label, question) in enumerate(prompt_options):
     col = chip_cols[idx % 3]
     with col:
-        if st.button(f"{label}", key=f"chip_{idx}", use_container_width=True):
+        if st.button(label, key=f"chip_{idx}", use_container_width=True):
             st.session_state.pending_prompt = question
 
 st.divider()
@@ -252,30 +238,29 @@ for msg_idx, message in enumerate(st.session_state.messages):
         # 3. Data Table & Action Buttons
         df = message.get("dataframe")
         if df is not None and not df.empty:
-            with st.expander(f"📊 Query Results Table ({message.get('row_count', len(df))} rows)", expanded=False):
+            with st.expander(f"Query Results ({message.get('row_count', len(df))} rows)", expanded=False):
                 st.dataframe(df, use_container_width=True)
 
                 col_dl, col_blank = st.columns([1, 4])
                 with col_dl:
                     csv_data = df.to_csv(index=False).encode('utf-8')
                     st.download_button(
-                        label="📥 Download CSV",
+                        label="Download CSV",
                         data=csv_data,
                         file_name=f"query_result_{msg_idx}.csv",
                         mime="text/csv",
                         key=f"dl_{msg_idx}"
                     )
 
-        # 4. Under-the-Hood SQL & Guardrails Inspector
+        # 4. Generated SQL & Execution Details
         if message.get("executed_sql"):
-            with st.expander("🛠️ Under the Hood: Executed SQL & Security Guardrails", expanded=False):
-                # Metadata Badges
+            with st.expander("SQL Query & Execution Details", expanded=False):
                 st.markdown(
-                    f"<span class='sql-meta-badge'>🛡️ Read-Only Guardrail Verified</span>"
-                    f"<span class='sql-time-badge'>⚡ {message.get('execution_time_ms', 0):.1f} ms</span>",
+                    f"<span class='sql-meta-badge'>Read-Only</span>"
+                    f"<span class='sql-time-badge'>{message.get('execution_time_ms', 0):.1f} ms</span>",
                     unsafe_allow_html=True
                 )
-                st.markdown(f"**Dialect:** SQLite | **Engine Mode:** `{message.get('mode', 'live_llm')}`")
+                st.markdown(f"**Dialect:** SQLite | **Mode:** `{message.get('mode', 'live_llm')}`")
                 st.code(message["executed_sql"], language="sql")
 
 
@@ -300,7 +285,7 @@ if user_prompt:
 
     # 2. Agent Processing & Execution
     with st.chat_message("assistant"):
-        with st.spinner("Analyzing schema, generating secure SQL, and fetching insights..."):
+        with st.spinner("Generating SQL and running query..."):
             agent = NL2SQLAgent(
                 api_key=api_key_input if api_key_input.strip() else None,
                 model_name=selected_model,
@@ -309,10 +294,10 @@ if user_prompt:
             result = agent.process_query(user_prompt)
 
         if not result["success"] and result.get("error"):
-            st.error(f"⚠️ {result['error']}")
+            st.error(f"Error: {result['error']}")
             st.session_state.messages.append({
                 "role": "assistant",
-                "natural_answer": f"**Execution Alert:** {result['error']}",
+                "natural_answer": f"**Execution Error:** {result['error']}",
                 "generated_sql": result.get("generated_sql"),
                 "executed_sql": result.get("executed_sql"),
                 "dataframe": None,
@@ -332,25 +317,25 @@ if user_prompt:
             # Display Data Table
             df = result.get("dataframe")
             if df is not None and not df.empty:
-                with st.expander(f"📊 Query Results Table ({result['row_count']} rows)", expanded=False):
+                with st.expander(f"Query Results ({result['row_count']} rows)", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     csv_data = df.to_csv(index=False).encode('utf-8')
                     st.download_button(
-                        label="📥 Download CSV",
+                        label="Download CSV",
                         data=csv_data,
                         file_name="query_result.csv",
                         mime="text/csv"
                     )
 
-            # Display SQL and Telemetry
+            # Display SQL and Details
             if result.get("executed_sql"):
-                with st.expander("🛠️ Under the Hood: Executed SQL & Security Guardrails", expanded=False):
+                with st.expander("SQL Query & Execution Details", expanded=False):
                     st.markdown(
-                        f"<span class='sql-meta-badge'>🛡️ Read-Only Guardrail Verified</span>"
-                        f"<span class='sql-time-badge'>⚡ {result['execution_time_ms']:.1f} ms</span>",
+                        f"<span class='sql-meta-badge'>Read-Only</span>"
+                        f"<span class='sql-time-badge'>{result['execution_time_ms']:.1f} ms</span>",
                         unsafe_allow_html=True
                     )
-                    st.markdown(f"**Dialect:** SQLite | **Engine Mode:** `{result['mode']}`")
+                    st.markdown(f"**Dialect:** SQLite | **Mode:** `{result['mode']}`")
                     st.code(result["executed_sql"], language="sql")
 
             # Save to session history

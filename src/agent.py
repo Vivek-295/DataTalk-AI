@@ -78,8 +78,7 @@ class NL2SQLAgent:
         semantic_context = self.semantic_layer.get_prompt_context()
         few_shot_context = self.few_shot_mgr.get_prompt_context(limit=4)
 
-        prompt = f"""You are an expert Chief Data Architect and Senior SQL Engineer for an enterprise commerce company.
-Your mission is to translate non-technical business questions into an optimized, highly accurate SQLite query.
+        prompt = f"""You are a helpful SQL assistant. Given a database schema and a user's natural language question, write an accurate and efficient SQLite query.
 
 {schema_context}
 
@@ -87,18 +86,18 @@ Your mission is to translate non-technical business questions into an optimized,
 
 {few_shot_context}
 
-### CRITICAL SQL GENERATION RULES:
-1. DIALECT: Generate strictly valid SQLite syntax.
-2. READ-ONLY: Output ONLY a SELECT statement. Never output INSERT, UPDATE, DELETE, DROP, ALTER, PRAGMA or ATTACH.
-3. BUSINESS RULES:
-   - For revenue calculations, always filter by `orders.status IN ('Completed', 'Shipped')` unless explicitly asked otherwise.
+### SQL Generation Guidelines:
+1. Dialect: Generate strictly valid SQLite syntax.
+2. Read-Only: Output ONLY a SELECT statement. Never output INSERT, UPDATE, DELETE, DROP, ALTER, PRAGMA, or ATTACH.
+3. Filtering & Formatting:
+   - For revenue calculations, filter by `orders.status IN ('Completed', 'Shipped')` unless asked otherwise.
    - Use meaningful column aliases (`total_revenue`, `customer_name`, `units_sold`).
-   - Round financial amounts to 2 decimal places using `ROUND(..., 2)`.
-   - When grouping or ranking, always include an appropriate ORDER BY clause.
-   - For year or month filtering, use SQLite date functions like `strftime('%Y-%m', date_col)` or `strftime('%Y', date_col)`.
-4. OUTPUT FORMAT: Return ONLY the raw SQL query. Do NOT include markdown code blocks (no ```sql), no conversational greetings, and no explanations.
+   - Round numeric currency amounts to 2 decimal places using `ROUND(..., 2)`.
+   - When grouping or ranking, include an appropriate ORDER BY clause.
+   - For year or month filtering, use SQLite date functions like `strftime('%Y-%m', date_col)`.
+4. Output Format: Return ONLY the raw SQL query. Do not wrap in markdown code fences (no ```sql), greetings, or extra explanations.
 
-User Business Question:
+User Question:
 "{user_question}"
 
 Executable SQLite Query:"""
@@ -106,10 +105,9 @@ Executable SQLite Query:"""
 
     def _build_synthesis_prompt(self, user_question: str, sql_query: str, sample_data_str: str, row_count: int) -> str:
         """Generates the prompt for translating tabular database output into a polished executive answer."""
-        prompt = f"""You are a Strategic Data Insights Analyst for C-suite business leaders and managers.
-Translate the following database query results into a clear, professional, natural language answer.
+        prompt = f"""You are a data assistant. Given the following query results for a user's question, summarize the key findings in clear, concise language with bullet points for important takeaways.
 
-Original Business Question:
+User Question:
 "{user_question}"
 
 Executed SQL Query:
@@ -119,12 +117,11 @@ Total Rows Returned: {row_count}
 Query Results Sample:
 {sample_data_str}
 
-### INSTRUCTIONS:
-- Directly answer the question in the opening sentence with specific numbers and key metrics.
-- Highlight the top performers, key trends, or actionable business takeaways in 2-3 bullet points.
-- Format all currency figures cleanly with dollar signs ($), and format percentages cleanly (e.g. 18.5%).
-- Do NOT mention technical database details (like SQLite, foreign keys, or SQL joins) in the executive answer.
-- Keep the summary concise, professional, and directly actionable."""
+### Instructions:
+- Answer the user's question directly in the opening sentence.
+- Highlight key trends, top performers, or notable patterns using 2-3 concise bullet points.
+- Format currency amounts with dollar signs ($) and format percentages cleanly (e.g., 18.5%).
+- Keep the summary clean and focused on the data findings."""
         return prompt
 
     def _offline_demo_query(self, user_question: str) -> Dict[str, Any]:
