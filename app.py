@@ -122,6 +122,12 @@ with st.sidebar:
 
     # API Configuration
     env_key = os.getenv("GEMINI_API_KEY", "")
+    if not env_key:
+        try:
+            if "GEMINI_API_KEY" in st.secrets:
+                env_key = st.secrets["GEMINI_API_KEY"]
+        except Exception:
+            pass
     api_key_input = st.text_input(
         "Google Gemini API Key",
         value=env_key,
@@ -150,6 +156,8 @@ with st.sidebar:
 
     # Database Architecture & Tables
     st.markdown("### 🗄️ Database Architecture")
+    if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
+        init_db(DB_PATH)
     db_engine = DatabaseEngine(DB_PATH)
     schema_info = db_engine.get_schema_info()
 
