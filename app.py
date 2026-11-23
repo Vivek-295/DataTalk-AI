@@ -183,7 +183,47 @@ with st.sidebar:
         for idx, ex in enumerate(few_shot.examples[:3], 1):
             st.markdown(f"**{idx}. {ex['question']}**")
             st.code(ex["sql"].strip(), language="sql")
+        with st.expander("Few-Shot Example Queries", expanded=False):
+        few_shot = FewShotManager()
+        st.caption(f"{len(few_shot.examples)} validated reference queries loaded.")
+        for idx, ex in enumerate(few_shot.examples[:3], 1):
+            st.markdown(f"**{idx}. {ex['question']}**")
+            st.code(ex["sql"].strip(), language="sql")
 
+    # --- PASTE RIGHT HERE (4 spaces from the left margin) ---
+    with st.expander("Upload Custom Data (CSV / Excel / DB)", expanded=False):
+        uploaded_file = st.file_uploader("Upload CSV, Excel, or SQLite .db", type=["csv", "xlsx", "xls", "db", "sqlite"])
+        if uploaded_file is not None:
+            if uploaded_file.name.endswith(('.db', '.sqlite')):
+                if st.button("Load Custom Database"):
+                    with open(DB_PATH, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    st.success(f"Loaded custom database '{uploaded_file.name}'!")
+                    time.sleep(1)
+                    st.rerun()
+            else:
+                default_tbl = os.path.splitext(uploaded_file.name)[0].lower().replace(" ", "_").replace("-", "_")
+                custom_table_name = st.text_input("Target Table Name", value=default_tbl)
+                if st.button("Import as SQL Table"):
+                    try:
+                        if uploaded_file.name.endswith('.csv'):
+                            df_upload = pd.read_csv(uploaded_file)
+                        else:
+                            df_upload = pd.read_excel(uploaded_file)
+
+                        df_upload.columns = [str(c).strip().lower().replace(" ", "_").replace("-", "_") for c in df_upload.columns]
+
+                        import sqlite3
+                        with sqlite3.connect(DB_PATH) as conn:
+                            df_upload.to_sql(custom_table_name, conn, if_exists="replace", index=False)
+                        st.success(f"Imported table '{custom_table_name}' ({len(df_upload)} rows)!")
+                        time.sleep(1)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Import failed: {e}")
+
+    st.divider()
+    if st.button("Reset Database"):            
     st.divider()
     if st.button("Reset Database"):
         with st.spinner("Re-seeding database..."):
