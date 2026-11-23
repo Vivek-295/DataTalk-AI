@@ -1,5 +1,5 @@
 """
-DataTalk AI - Enterprise Natural Language to SQL (NL2SQL) Database Agent
+DataTalk AI - Natural Language to SQL Assistant
 Streamlit Web Application
 """
 
@@ -183,14 +183,7 @@ with st.sidebar:
         for idx, ex in enumerate(few_shot.examples[:3], 1):
             st.markdown(f"**{idx}. {ex['question']}**")
             st.code(ex["sql"].strip(), language="sql")
-        with st.expander("Few-Shot Example Queries", expanded=False):
-        few_shot = FewShotManager()
-        st.caption(f"{len(few_shot.examples)} validated reference queries loaded.")
-        for idx, ex in enumerate(few_shot.examples[:3], 1):
-            st.markdown(f"**{idx}. {ex['question']}**")
-            st.code(ex["sql"].strip(), language="sql")
 
-    # --- PASTE RIGHT HERE (4 spaces from the left margin) ---
     with st.expander("Upload Custom Data (CSV / Excel / DB)", expanded=False):
         uploaded_file = st.file_uploader("Upload CSV, Excel, or SQLite .db", type=["csv", "xlsx", "xls", "db", "sqlite"])
         if uploaded_file is not None:
@@ -211,6 +204,7 @@ with st.sidebar:
                         else:
                             df_upload = pd.read_excel(uploaded_file)
 
+                        # Clean column headers
                         df_upload.columns = [str(c).strip().lower().replace(" ", "_").replace("-", "_") for c in df_upload.columns]
 
                         import sqlite3
@@ -222,8 +216,6 @@ with st.sidebar:
                     except Exception as e:
                         st.error(f"Import failed: {e}")
 
-    st.divider()
-    if st.button("Reset Database"):            
     st.divider()
     if st.button("Reset Database"):
         with st.spinner("Re-seeding database..."):
